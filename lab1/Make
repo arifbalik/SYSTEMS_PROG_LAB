@@ -1,0 +1,7 @@
+CC=cc
+CFLAGS=-g
+all : sharefile
+sharefile : sharefile.o
+	${CC} ${CFLAGS} sharefile.o -o sharefile
+clean:
+	rm -f *.o *~ *# cor a.out sharefile
