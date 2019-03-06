@@ -107,7 +107,7 @@ int main(int argc, char** argv){
 		while(--i);
 		i = WAIT;
 		#ifdef DEBUG
-			write(1,"\nParent read:",13);
+			write(1,"\nParent have read:",18);
 			write(1, &c, 1);
 		#endif
 		if(write(__FDWT, &c, 1) == -1) perror("Oops!");
