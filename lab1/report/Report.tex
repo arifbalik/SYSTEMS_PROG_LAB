@@ -257,11 +257,12 @@ There is more optimisation made on this program, which can be seen in the Append
  * Uncomment to enable debug mode. 
  * When disabled it saves 3000 microseconds!!!
  */
-//#define DEBUG 
+#define DEBUG 
 #define WAIT 10000
 
 #define HELP "Please use the command as follows;\n" \
 			 ".\\sharefile.c [input_file] [output_file]"
+
 int main(int argc, char** argv){
 
 	#ifdef DEBUG
@@ -279,11 +280,8 @@ int main(int argc, char** argv){
 		printf("Not enough parameter!" HELP "\n");
 		exit(1);
 	}
-	if(open(argv[1], O_RDONLY) == -1){
-		perror("Oops!");
-		exit(1);
-	}
-	if(open(argv[2], O_CREAT|O_WRONLY|O_TRUNC, 0666) == -1){
+	if(open(argv[1], O_RDONLY) == -1 && 
+	   open(argv[2], O_CREAT|O_WRONLY|O_TRUNC, 0666) == -1){
 		perror("Oops!");
 		exit(1);
 	}
@@ -291,8 +289,10 @@ int main(int argc, char** argv){
 	#ifdef DEBUG
 		printf("Parent: creating child process \n");
 	#endif
+
 	pid = fork();
 	if(pid == 0){
+		
 		#ifdef DEBUG
 			printf("Child process starts, id: %d\n", getpid());
 		#endif
