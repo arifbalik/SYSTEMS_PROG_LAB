@@ -10,46 +10,53 @@
 #include <unistd.h>
 
 #define DEBUG
-#define WAIT 500000
+#define WAIT 10000
 
 int main(int argc, char** argv){
 
-	FILE *fdrd, *fdwt;
+	int fdrd, fdwt;
 	int pid;
 	char parent = 'P', child = 'C', c;
 	unsigned long i = WAIT;
 
-	if(argc != 3) exit(1);
+	if(argc > 3){
+		printf("Too much parameter! Please use the command as follows;\n .\\sharefile.c [input_file] [output_file] \n");
+		exit(1);
+	}else if(argc < 3){
+		printf("Not enough parameter! Please use the command as follows;\n .\\sharefile.c [input_file] [output_file] \n");
+		exit(1);
+	}
 
+	if((fdrd = open(argv[1], O_RDONLY)) == -1){
+		perror("Oops!");
+		exit(1);
+	}
+	if((fdwt = creat(argv[2], 0666)) == -1){
+		perror("Oops!");
+		exit(1);
+	}
 
 	#ifdef DEBUG
+		printf("fdrd: %d, fdwt: %d\n",fdrd,fdwt );
 		printf("Parent: creating child process \n");
 	#endif
 
 	pid = fork();
 	if(pid == 0){
-		if((int)(fdrd = fopen(argv[1], "r")) == 0){
-			perror("Oops!");
-			exit(1);
-		}
-		if((int)(fdwt = fopen(argv[2], "w+")) == -1){
-			perror("Oops!");
-			exit(1);
-		}
+		
 		#ifdef DEBUG
 			printf("Child process starts, id: %d\n", getpid());
 		#endif
 		while(1){
-			c = fgetc(fdrd);
-			if(feof(fdrd)){
-				printf("End of the text \n");
+			if(read(fdrd, &c, 1) != 1){
+				printf("\nChild: end of the text \n");
 				break;
 			} 
 			while(--i);
 			i = WAIT;
-			fputc((int)child, fdwt);
-			//fputc(1, &child, 1);
-			fputc((int)c, fdwt);
+			write(1,"\nChild read:",12);
+			write(1, &c, 1);
+			write(fdwt, &c, 1);
 		}
 		#ifdef DEBUG
 			printf("Exiting child process\n");
@@ -57,36 +64,30 @@ int main(int argc, char** argv){
 		exit(0);
 	}
 	else{
-		if((int)(fdrd = fopen(argv[1], "r")) == 0){
-				perror("Oops!");
-				exit(1);
-		}
-		if((int)(fdwt = fopen(argv[2], "w+")) == -1){
-			perror("Oops!");
-			exit(1);
-		}
+
 		#ifdef DEBUG
-			printf("Parent starts, id: %d\n", getpid());
+			printf("Parent process starts, id: %d\n", getpid());
 		#endif
+
 		while(1){
-			c = fgetc(fdrd);
-			if(feof(fdrd)){
-				printf("End of the text \n");
-				break;
-			} 
-			while(--i);
-			i = WAIT;
-				
-			//write(1, &parent, 1);
-			fputc((int)parent, fdwt);
-			fputc((int)c, fdwt);
-			
-		}
-		#ifdef DEBUG
+
+		if(read(fdrd, &c, 1) != 1){
+			#ifdef DEBUG
+				printf("\nParent: end of the text \n");
+			#endif
+			break;
+		} 
+		while(--i);
+		i = WAIT;
+		write(1,"\nParent read:",13);
+		write(1, &c, 1);
+		write(fdwt, &c, 1);
+	}
+
+	wait(0);
+	#ifdef DEBUG
 			printf("Exiting parent process\n");
-		#endif
-		wait(0);
-		fclose(fdrd);
-		fclose(fdwt);
+	#endif
+		
 	}
 }
