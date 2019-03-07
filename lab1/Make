@@ -4,4 +4,4 @@ all : sharefile
 sharefile : sharefile.o
 	${CC} ${CFLAGS} sharefile.o -o sharefile
 clean:
-	rm -f *.o *~ *# cor a.out sharefile
+	rm -f *.o *~ *# core a.out sharefile
