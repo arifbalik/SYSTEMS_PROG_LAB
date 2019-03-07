@@ -40,22 +40,25 @@ This report include analysis of some system calls in UNIX environment based on a
 
 This report powered by \LaTeX{}
 \end{abstract}
+
+\section*{Theory of Operation}
+Program first checks whether expected three argument is given or not, if not program terminates. In case of correct input from console, program opens input file and creates a new file to copy the text. Later on program calls \textit{fork} and creates a child process. Then in both child and parent processes program reads the input file and writes into created file along with a console message based on which part of the program did that (C for child, P for parent). There is a delay between read and write operations in both processes, it causes copied file to be corrupted; for instance parent reads the character \textit{x} and waits for loop to finish, in the same time child also reads the character \textit{x+1}\footnote{When program calls \textit{read} function it reads the \textit{n} bytes of data and increments the cursor the latest character, therefore even when both processes store the information in their own isolated variables, they effect each other via global cursor value} and finishes the loop first and writes the character \textit{x+1}\footnote{1 is an arbitrary value it can be much more than that} in the place where \textit{x} should be.
 \section*{Q\&A}
 
 \textit{\textbf{Q1.} What is the purpose of this laboratory work?}
-\vspace{5mm}
+\vspace{3mm}
 
 The purpose is to analyse the behaviour of the given program by observing and tweaking some code lines, thus getting a sense of how some system calls behave in which conditions in UNIX environment.
 
-\vspace{5mm}
+\vspace{3mm}
 \textit{\textbf{Q2.} What is the meaning of two parameters of the function \textbf{main()}?}
-\vspace{5mm}
+\vspace{3mm}
 
 The first parameter \textbf{argc} stands for \textit{Argument Count} which holds the information about how many parameter is given when program executed. The second one, \textbf{argv} stands for \textit{Argument Value} which stores the values of given arguments during execution. The form of \textbf{argv} is called \textit{pointer-to-pointer} which is a char pointer to another char pointer, this gives an incredible flexibility to developer, when there is a need for any kind of text processing. Simply, we can think it as two-dimensional char array.
 
-\vspace{5mm}
+\vspace{3mm}
 \textit{\textbf{Q3.} Suppose that you started the program using two names of files. What will be the value of the parameter \textbf{argc} in the \textbf{main()} function?}
-\vspace{5mm}
+\vspace{3mm}
 
 The \textbf{argc} is always greater than 0, because the first parameter of \textbf{argv} is always the name of the executable program (unless if we use a specialised compiler). So in case of given two arguments to the program, we expect \textbf{argc} to be 3.
 
@@ -71,7 +74,7 @@ As we stated earlier, \textbf{argv[0]} should be name of the program, \textbf{ar
 
 The function \textbf{open()} takes mainly two parameter, first is a path name and second is flags. It opens a file and returns a number associated with opened file (\textit{File Descriptor}) and flags determines whether it is a read only or read and write or write only etc. file. It returns -1 if anything goes wrong, and sets the global error flag for developer to further debug the problem. 
 
-The function \textbf{creat()} as name calls creates a file and return a file descriptor just like \textbf{open()} function. If file already exists, function opens the file and rewrites it.  It has two parameter, which first one is path name and second one is a parameter called \textit{mode}. It defines permissions for the file to be created.
+The function \textbf{creat()}\footnote{Interesting fact : \textit{creat} is a typo made by Ken Thompson.} as name calls creates a file and return a file descriptor just like \textbf{open()} function. If file already exists, function opens the file and rewrites it.  It has two parameter, which first one is path name and second one is a parameter called \textit{mode}. It defines permissions for the file to be created.
 
 But as said earlier \textbf{open()}  function takes \textit{mainly} two parameters, but it has one more optional parameter which is the parameter also called \textit{mode}. Function behaves just as same as \textbf{creat()} function when the parameter flag is set as following code. The permissions can be defined via third parameter.
 
@@ -280,7 +283,7 @@ int main(int argc, char** argv){
 		printf("Not enough parameter!" HELP "\n");
 		exit(1);
 	}
-	if(open(argv[1], O_RDONLY) == -1 && 
+	if(open(argv[1], O_RDONLY) == -1 || 
 	   open(argv[2], O_CREAT|O_WRONLY|O_TRUNC, 0666) == -1){
 		perror("Oops!");
 		exit(1);
