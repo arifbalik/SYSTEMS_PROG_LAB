@@ -1,5 +1,5 @@
 /*
- * System Programming Course
+ * Systems Programming Course
  * Lab #1
  * Concurrent File Acces by Parent and Child Processes
  * Arif Ahmet Balik - 180303019
