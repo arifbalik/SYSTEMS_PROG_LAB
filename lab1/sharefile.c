@@ -24,7 +24,7 @@
  * When disabled it saves 3000 microseconds!!!
  */
 #define DEBUG 
-#define WAIT 10000
+#define WAIT 50000
 
 #define HELP "Please use the command as follows;\n" \
 			 ".\\sharefile.c [input_file] [output_file]"

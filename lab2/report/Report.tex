@@ -1,0 +1,171 @@
+\documentclass[11pt]{article}
+\usepackage{geometry}                % See geometry.pdf to learn the layout options. There are lots.
+\geometry{a4paper}                   % ... or a4paper or a5paper or ... 
+%\geometry{landscape}                % Activate for for rotated page geometry
+%\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{epstopdf}
+\usepackage{authblk}
+\usepackage{amsmath}
+\usepackage{sectsty}
+\graphicspath{ {figures/} }
+\usepackage{caption}
+\usepackage{listings}
+\usepackage{parcolumns}
+\usepackage{hyperref}
+
+
+\renewcommand{\thefootnote}{\roman{footnote}}
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+
+\title{The Study of Processes in UNIX \\Lab. \#2}
+
+\author{Arif A. Balik}
+\affil{Undergraduate Student\\
+	Sytstems Programming\\
+	Department of Computer Science\\
+	Arel University\\
+	Büyükçekmece, İstanbul 34537\\
+    Email: arifbalik@outlook.com
+}
+
+%\date{March 5, 2019}                                           % Activate to display a given date or no date
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This report include analysis of some system calls in UNIX environment based on a program which provided in System Programming course. First section explains some system calls, second section answers some questions asked in the experiment paper, and third section suggests and implements some improvements and optimisations on the code.
+
+This report is powered by \LaTeX{}
+\end{abstract}
+\section*{Explanation of Some System and Library Functions}
+\subsection*{Difference between system and library functions}
+A system call is provided by the kernel and directly handled there, and a library functions are functions within programs, usually they are in the same level as shells.
+
+\subsection*{write()}
+\textit{write} is a system call used to output data to given channel (terminal, file etc.)
+
+It has the prototype;
+
+\begin{lstlisting}[frame=tlrb]{Optimised}
+ssize_t write(int fildes, const void *buf, size_t nbytes);
+\end{lstlisting}
+
+where \textit{fildes} is the channel that is where to write, \textit{buf} is which to write and \textit{nbytes} is how many bytes to write.
+
+\subsection*{fork()}
+The system call \textit{fork} creates an exact copy of current program. Takes no parameters and returns \textit{0} for \textit{child} process and child's id for \textit{parent} process.
+
+\subsection*{getpid()}
+The system call \textit{getpid} returns the process id of currently running process.
+
+\subsection*{getppid()}
+The system call \textit{getppid} returns the process id of currently running process's parent process.
+
+\subsection*{execl()}
+The system call \textit{excl} replaces the current program with given program. It has the form;
+
+\begin{lstlisting}[frame=tlrb]{Optimised}
+int execl(const char *path, const char *arg, ...);
+\end{lstlisting}
+
+where \textit{path} is the path for new executable file and \textit{arg} is arguments to pass to the new process. Function only returns \textit{-1} if there is an error. By convention the first argument to pass into new program should be the name of the program and list of arguments should end with \textit{NULL}.
+
+\subsection*{sleep()}
+In the labsheet, instructor specified the function \textit{sleep} as a library function, but it is a system function in UNIX.\footnote{http://www.cs.miami.edu/home/geoff/Courses/CSC521-04F/Content/UNIXProgramming/UNIXSystemCalls.shtml}
+
+It delays the system by given amount in seconds and returns \textit{0} if the amount of time elapsed otherwise (in case of interruption) returns the amount of time left.
+
+\section*{Theory of Operation}
+...
+\section*{Q\&A}
+
+\textit{\textbf{Q1.} What is the purpose of this laboratory work?}
+\vspace{3mm}
+
+
+\vspace{3mm}
+\textit{\textbf{Q2.} How mony child processes created by the parent process in \textbf{mainprog.c}?}
+\vspace{3mm}
+
+
+\vspace{3mm}
+\textit{\textbf{Q3.} In \textbf{mainprog.c}, a few statements are executed by each created child process. Show these statements.}
+\vspace{3mm}
+
+
+\vspace{5mm}
+\textit{\textbf{Q4.} In \textbf{mainprog.c}, to what program is child process switched? Show and explain the corresponding statement. Does a child process return to the \textbf{mainprog} after finishing another program (explain, why yes/no)?}
+\vspace{5mm}
+
+
+\vspace{5mm}
+\textit{\textbf{Q5.} Which statements are NOT executed by the parent process in \textbf{mainprog.c}?}
+\vspace{5mm}
+
+
+\vspace{5mm}
+\textit{\textbf{Q6.} What is the purpose of system call \textbf{wait()} in \textbf{mainprog.c}? What results are extracted by the parent process from this system call?}
+\vspace{5mm}
+
+
+\vspace{5mm}
+\textit{\textbf{Q7.} Is it possible for a child process to continue its work after the parent process terminates? What will the parent be for such a child? Prove your answer based on the results of the Part 2 of this lab work.}
+\vspace{5mm}
+
+
+\vspace{5mm}
+\textit{Q8. What is the purpose of directive \textbf{\#define} in the program \textbf{procmemory.c}?}
+\vspace{5mm}
+
+
+\vspace{5mm}
+\textit{\textbf{Q9.} What is the meaning of the variables \textbf{etext}, \textbf{edata} and \textbf{end} in \textbf{procmemory.c}? Why are these variables declared with the word \textbf{extern}?}
+\vspace{5mm}
+
+
+\vspace{5mm}
+\textit{\textbf{Q10.} Suppose that a variable i was declared and assigned some value in the parent process before the creation of a child process. Will this variable be accessible to the child process? Will the parent process see the change made in this variable by the child process?}
+\vspace{5mm}
+
+
+\vspace{5mm}
+\textit{\textbf{Q11.} Is \textbf{malloc()} a system call or a library function? Can you guess it looking at your program?}
+\vspace{5mm}
+
+
+\vspace{5mm}
+\textit{\textbf{Q12.} What is the meaning of two parameters of the function \textbf{main()} in the program \textbf{child.c}? What is \textbf{argv[1]} in this program?}
+\vspace{5mm}
+
+
+\vspace{5mm}
+\textit{\textbf{Q13.} What is the purpose of system calls \textbf{getpid} and \textbf{getppid}?}
+\vspace{5mm}
+
+
+\vspace{5mm}
+\textit{\textbf{Q14.} Is it possible for a process to use more than one program?}
+\vspace{5mm}
+
+
+\vspace{5mm}
+\textit{\textbf{Q15.} Is it possible for two or more processes to use the same program?}
+\vspace{5mm}
+
+\vspace{5mm}
+\textit{\textbf{Q16.} What is the purpose of the system calls of the \textbf{exec} family? Dos this system call return any result (in case it succeeds or fails)?}
+\vspace{5mm}
+
+
+\section*{Optimization}
+
+\newpage
+
+\section*{Appendix}
+
+
+
+\end{document}  
