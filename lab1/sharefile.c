@@ -47,8 +47,7 @@ int main(int argc, char** argv){
 		exit(1);
 	}
 
-	if(open(argv[1], O_RDONLY) == -1 || 
-	   open(argv[2], O_CREAT|O_WRONLY|O_TRUNC, 0666) == -1){
+	if((open(argv[1], O_RDONLY) | open(argv[2], O_CREAT|O_WRONLY|O_TRUNC, 0666)) == -1){
 		perror("Oops!");
 		exit(1);
 	}
