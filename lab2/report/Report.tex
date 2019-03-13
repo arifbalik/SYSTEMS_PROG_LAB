@@ -1,8 +1,7 @@
 \documentclass[11pt]{article}
-\usepackage{geometry}                % See geometry.pdf to learn the layout options. There are lots.
-\geometry{a4paper}                   % ... or a4paper or a5paper or ... 
-%\geometry{landscape}                % Activate for for rotated page geometry
-%\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{geometry}                
+\geometry{a4paper}                  
+
 \usepackage{graphicx}
 \usepackage{amssymb}
 \usepackage{epstopdf}
@@ -49,7 +48,7 @@ A system call is provided by the kernel and directly handled there, and a librar
 
 It has the prototype;
 
-\begin{lstlisting}[frame=tlrb]{Optimised}
+\begin{lstlisting}[frame=tlrb]
 ssize_t write(int fildes, const void *buf, size_t nbytes);
 \end{lstlisting}
 
@@ -67,14 +66,29 @@ The system call \textit{getppid} returns the process id of currently running pro
 \subsection*{execl()}
 The system call \textit{excl} replaces the current program with given program. It has the form;
 
-\begin{lstlisting}[frame=tlrb]{Optimised}
+\begin{lstlisting}[frame=tlrb]
 int execl(const char *path, const char *arg, ...);
 \end{lstlisting}
 
 where \textit{path} is the path for new executable file and \textit{arg} is arguments to pass to the new process. Function only returns \textit{-1} if there is an error. By convention the first argument to pass into new program should be the name of the program and list of arguments should end with \textit{NULL}.
 
 \subsection*{sleep()}
-In the labsheet, instructor specified the function \textit{sleep} as a library function, but it is a system function in UNIX.\footnote{http://www.cs.miami.edu/home/geoff/Courses/CSC521-04F/Content/UNIXProgramming/UNIXSystemCalls.shtml}
+In the labsheet, instructor specified the function \textit{sleep} as a library function, but in most of places it reffered as a system function.\footnote{http://www.cs.miami.edu/home/geoff/Courses/CSC521-04F/Content/UNIXProgramming/UNIXSystemCalls.shtml}
+
+But then again looking at the \textbf{unistd.h} where sleep defined, it can bee seen that it uses a well documented system call \textbf{nanosleep}.
+
+\begin{lstlisting}[frame=tlrb]
+unsigned int sleep(unsigned int seconds)
+{
+	struct timespec ts;
+	
+	ts.tv_sec = seconds;
+	ts.tv_nsec = 0;
+	if(nanosleep(&ts, &ts) == 0)
+		return 0;
+	return ts.tv_sec;
+}
+\end{lstlisting}
 
 It delays the system by given amount in seconds and returns \textit{0} if the amount of time elapsed otherwise (in case of interruption) returns the amount of time left.
 
@@ -90,75 +104,132 @@ It delays the system by given amount in seconds and returns \textit{0} if the am
 \textit{\textbf{Q2.} How mony child processes created by the parent process in \textbf{mainprog.c}?}
 \vspace{3mm}
 
+Three child processes created.
 
 \vspace{3mm}
 \textit{\textbf{Q3.} In \textbf{mainprog.c}, a few statements are executed by each created child process. Show these statements.}
 \vspace{3mm}
 
+\begin{lstlisting}[frame=tlrb]
+sprintf(value, "%d", i);
+execl("child", "child", value, 0);
+\end{lstlisting}
 
 \vspace{5mm}
 \textit{\textbf{Q4.} In \textbf{mainprog.c}, to what program is child process switched? Show and explain the corresponding statement. Does a child process return to the \textbf{mainprog} after finishing another program (explain, why yes/no)?}
 \vspace{5mm}
 
+Child processes switched to \textbf{child.c}.
+
+Child does not returns to \textbf{mainprog.c} because when \textbf{execl} called, it replaces the current program with \textbf{child.c}, there is no way that child can return.\footnote{Unless \textbf{mainprog.c} called again in \textbf{child.c} using \textbf{execl}}
+
+Also, in the program either process kills itself or exits.
 
 \vspace{5mm}
 \textit{\textbf{Q5.} Which statements are NOT executed by the parent process in \textbf{mainprog.c}?}
 \vspace{5mm}
 
+Statements shown in \textbf{Q3.}
 
 \vspace{5mm}
 \textit{\textbf{Q6.} What is the purpose of system call \textbf{wait()} in \textbf{mainprog.c}? What results are extracted by the parent process from this system call?}
 \vspace{5mm}
 
+The function \textbf{wait} puts parent process into sleep until child processes exits. It returns the ID of child process who terminated and fills the variable which given as a parameter with the exit status given by the child when terminating.
 
 \vspace{5mm}
 \textit{\textbf{Q7.} Is it possible for a child process to continue its work after the parent process terminates? What will the parent be for such a child? Prove your answer based on the results of the Part 2 of this lab work.}
 \vspace{5mm}
 
+Yes. When parent terminates before child process, then that process called \textit{orphan}, and \textbf{init} function takes over the role of parent which has a pid of 1.
+
+As we can see from the output of the program \textbf{procident.c}, parent terminates before the child, and child still runs and outputs its parent process id which is 1.
+
+\begin{lstlisting}[frame=tlrb]
+Child: my ID = 5219, i = 2
+Child: my parent ID = 5218
+Parent: my ID = 5218, i = 0
+Parent terminating...
+Arif-MacBook-Pro:lab2 celimless$ 
+ Child after sleping: my ID = 5219
+
+ Child after sleping: my parent ID = 1
+NEW PROGRAM simple IS STARTED BY TH CHILD PROCESS
+Child: my ID = 5219
+Child: my parent ID = 1
+Child: terminating...
+\end{lstlisting}
+
 
 \vspace{5mm}
-\textit{Q8. What is the purpose of directive \textbf{\#define} in the program \textbf{procmemory.c}?}
+\textit{\textbf{Q8.} What is the purpose of directive \textbf{\#define} in the program \textbf{procmemory.c}?}
 \vspace{5mm}
+
+\textbf{\#define} is a preprocessor, it has no use as a compiled program but it gives developer the ability to create more modular and readable code. In the \textbf{procmemory.c} compiler simply pastes the contents wherever it sees the definition \textbf{SHW\_ADR}. Also the definition behaves as a function but has no effect on program as such.
+
+For example, if developer calls this definition \textit{SHW\_ADR("x",x)}, compiler changes that line as follows; 
+
+\begin{lstlisting}[frame=tlrb]
+printf("ID %s \t is at virtual address: %8X\n", "x", &x)
+\end{lstlisting}
+
 
 
 \vspace{5mm}
 \textit{\textbf{Q9.} What is the meaning of the variables \textbf{etext}, \textbf{edata} and \textbf{end} in \textbf{procmemory.c}? Why are these variables declared with the word \textbf{extern}?}
 \vspace{5mm}
 
+The variables \textbf{etext}, \textbf{edata} and \textbf{end} represents segments of the program, such as variable environment, text segment etc. They are provided by linker and dangerous to use as stated by Linux man page. For instance macOS does not allow to access does variables directly, it rather provides some functions which returns the values of those variables.
+
+\textbf{extern} keyword gives variable the ability to extend itself throughout the source files. But it only declares the variable, not defines it. In order to use the variable, it has to be defined somewhere in the source program, or in a library.
 
 \vspace{5mm}
 \textit{\textbf{Q10.} Suppose that a variable i was declared and assigned some value in the parent process before the creation of a child process. Will this variable be accessible to the child process? Will the parent process see the change made in this variable by the child process?}
 \vspace{5mm}
 
+Every variable is copied and transferred to new locations with their last values in the process of fork. So the child could access to the variable but it would be isolated from parent's variable even thou they are in the same source file, have the same name, and same definition etc.
 
 \vspace{5mm}
 \textit{\textbf{Q11.} Is \textbf{malloc()} a system call or a library function? Can you guess it looking at your program?}
 \vspace{5mm}
 
+Knowing whether is a function a system call or not is not possible by looking at the source file but few comments can be made.
+
+\textbf{malloc} used to allocate memory, so it has to deal with low level sources but as in \textbf{printf} - \textbf{write} relationship, \textbf{malloc} may use some other system calls to accomplish the task of allocation.
+
+According to the \textit{Linux Programmer's Manual} \textbf{malloc} is not a system call.\footnote{http://man7.org/linux/man-pages/man2/syscalls.2.html}
 
 \vspace{5mm}
 \textit{\textbf{Q12.} What is the meaning of two parameters of the function \textbf{main()} in the program \textbf{child.c}? What is \textbf{argv[1]} in this program?}
 \vspace{5mm}
 
+The first parameter \textbf{argc} gives the number of arguments given as an input when executable file started, and second one gives the values of those parameters. 
+
+\textbf{argv[1]} is the number of the child which is the variable \textit{i} in the \textbf{mainprog.c}
 
 \vspace{5mm}
 \textit{\textbf{Q13.} What is the purpose of system calls \textbf{getpid} and \textbf{getppid}?}
 \vspace{5mm}
 
+ \textbf{getpid} returns the value of current process and  \textbf{getppid} returns the value of parent process of the current process. It is usually used to create unique file names, but can be used to make child and parent processes to do different things in the same source file.
 
 \vspace{5mm}
 \textit{\textbf{Q14.} Is it possible for a process to use more than one program?}
 \vspace{5mm}
 
+No. A process can run one program at a time. But it can use multithreading which is not same as running multiple programs. It can also trigger other programs to run them, but then again it does not mean the process runs that program.
 
 \vspace{5mm}
 \textit{\textbf{Q15.} Is it possible for two or more processes to use the same program?}
 \vspace{5mm}
 
+Yes but by saying \textit{same} it should be noted that two processes will use same source code and will run two identical programs at the same time separately.
+
 \vspace{5mm}
-\textit{\textbf{Q16.} What is the purpose of the system calls of the \textbf{exec} family? Dos this system call return any result (in case it succeeds or fails)?}
+\textit{\textbf{Q16.} What is the purpose of the system calls of the \textbf{exec} family? Does this system call return any result (in case it succeeds or fails)?}
 \vspace{5mm}
 
+\textbf{exec} system calls used to alter the current program and replace it and naturally they have no return values unless there is an error, which will return -1.
 
 \section*{Optimization}
 

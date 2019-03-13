@@ -36,7 +36,7 @@ int main(int argc, char** argv){
 		gettimeofday(&t1, NULL);
 	#endif
 
-	char pid, c, error;
+	char c, error;
 	unsigned long i = WAIT;
 
 	if(argc > 3){
@@ -56,8 +56,7 @@ int main(int argc, char** argv){
 		printf("Parent: creating child process \n");
 	#endif
 
-	pid = fork();
-	if(pid == 0){
+	if(!fork()){
 		
 		#ifdef DEBUG
 			printf("Child process starts, id: %d\n", getpid());
