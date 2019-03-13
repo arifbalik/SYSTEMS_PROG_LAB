@@ -37,7 +37,6 @@ int main(int argc, char** argv){
 	#endif
 
 	char c, error;
-	unsigned long i = WAIT;
 
 	if(argc > 3){
 		printf("Too much parameter!" HELP "\n");
@@ -72,8 +71,7 @@ int main(int argc, char** argv){
 				#endif
 				break;
 			}
-			while(--i);
-			i = WAIT;
+			usleep(WAIT);
 			#ifdef DEBUG
 				write(1,"\nChild have read:",17);
 				write(1, &c, 1);
@@ -102,8 +100,7 @@ int main(int argc, char** argv){
 			#endif
 			break;
 		}
-		while(--i);
-		i = WAIT;
+		usleep(WAIT);
 		#ifdef DEBUG
 			write(1,"\nParent have read:",18);
 			write(1, &c, 1);
