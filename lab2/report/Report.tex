@@ -93,12 +93,48 @@ unsigned int sleep(unsigned int seconds)
 It delays the system by given amount in seconds and returns \textit{0} if the amount of time elapsed otherwise (in case of interruption) returns the amount of time left.
 
 \section*{Theory of Operation}
-...
+\subsection*{Part 1}
+
+\textbf{mainprog.c} runs first and immediately creates three childs and childs overlays themselves with the program \textbf{child.c} with the arguments \textit{1}, textit{2} and textit{3} respectively. Then parent process prints the ID of childs and wait them until they exit.
+
+In the \textbf{child.c} each child prints their pid values along with a \textit{char}, that is 0 - 256 number created from its own pid value. Then it sleeps random amount of time (0 - 5 sec). Finally if the value that have been passed trough child via \textit{argv} is checked whether it is an even or odd number, if it is even then child kills itself with the signal value \textit{9}, if not it exits with the char value mentioned above.
+
+\subsection*{Part 2}
+
+In the \textbf{procident.c} program first creates a child process than terminates itself after 3 seconds of sleep (thus child becomes orphan). In the child process, after 10 seconds of sleep, child overlays itself with \textbf{simple.c}.  Also as mentioned in the previous lab report, the variables can not effect each other after fork unless intended. 
+
+In the \textbf{simple.c} child reports its parent (\textbf{init()}) and exits.
+
+In the \textbf{procmemory.c} program creates a bunch of global and local variables and shows their virtual addresses along with the starting addresses of the program, that is \textit{etext}, \textit{edata} and \textit{end}. 
+
+INFORMAL NOTE : Honestly I did not understand why the variables have the same addresses in both child and parent processes. I tried to change the value of \textit{i} in the child process and read it both from child and parent, and as expected they yield different results, but then again their addresses are same. My expertise is on mostly embedded systems and bare-metal C, so I can't understand the concept of Virtual Memory how matter I try. I will read more documents thou.
+
+\vspace{10mm}
+\hspace{45mm}
+\begin{tabular}{|c|l|}
+\hline
+\textbf{etext}   & 0x100000DF4 \\ \hline
+\textbf{edata}   & 0x100001070 \\ \hline
+\textbf{end}     & 0x100003000 \\ \hline
+\textbf{}        &             \\ \hline
+\textbf{main}    & 0xD4EDB90   \\ \hline
+\textbf{showit}  & 0xD4EDD30   \\ \hline
+\textbf{cptr}    & 0xD4EE068   \\ \hline
+\textbf{buffer1} & 0xD4EE070   \\ \hline
+\textbf{i}       & 0x52712A4C  \\ \hline
+\textbf{buffer2} & 0x527129D8  \\ \hline
+\end{tabular}
+
+
+
+\newpage
+
 \section*{Q\&A}
 
 \textit{\textbf{Q1.} What is the purpose of this laboratory work?}
 \vspace{3mm}
 
+The purpose is to get an understanding of some UNIX system calls, dynamics between child and parent processes during switching between programs and understanding the Virtual Memory.
 
 \vspace{3mm}
 \textit{\textbf{Q2.} How mony child processes created by the parent process in \textbf{mainprog.c}?}
@@ -136,7 +172,7 @@ Statements shown in \textbf{Q3.}
 \vspace{5mm}
 
 The function \textbf{wait} puts parent process into sleep until child processes exits. It returns the ID of child process who terminated and fills the variable which given as a parameter with the exit status given by the child when terminating.
-
+\newpage
 \vspace{5mm}
 \textit{\textbf{Q7.} Is it possible for a child process to continue its work after the parent process terminates? What will the parent be for such a child? Prove your answer based on the results of the Part 2 of this lab work.}
 \vspace{5mm}
@@ -177,13 +213,16 @@ printf("ID %s \t is at virtual address: %8X\n", "x", &x)
 
 \vspace{5mm}
 \textit{\textbf{Q9.} What is the meaning of the variables \textbf{etext}, \textbf{edata} and \textbf{end} in \textbf{procmemory.c}? Why are these variables declared with the word \textbf{extern}?}
-\vspace{5mm}
+\vspace{3mm}
 
 The variables \textbf{etext}, \textbf{edata} and \textbf{end} represents segments of the program, such as variable environment, text segment etc. They are provided by linker and dangerous to use as stated by Linux man page. For instance macOS does not allow to access does variables directly, it rather provides some functions which returns the values of those variables.
 
 \textbf{extern} keyword gives variable the ability to extend itself throughout the source files. But it only declares the variable, not defines it. In order to use the variable, it has to be defined somewhere in the source program, or in a library.
 
 \vspace{5mm}
+
+\newpage
+
 \textit{\textbf{Q10.} Suppose that a variable i was declared and assigned some value in the parent process before the creation of a child process. Will this variable be accessible to the child process? Will the parent process see the change made in this variable by the child process?}
 \vspace{5mm}
 
@@ -219,6 +258,8 @@ The first parameter \textbf{argc} gives the number of arguments given as an inpu
 
 No. A process can run one program at a time. But it can use multithreading which is not same as running multiple programs. It can also trigger other programs to run them, but then again it does not mean the process runs that program.
 
+\newpage
+
 \vspace{5mm}
 \textit{\textbf{Q15.} Is it possible for two or more processes to use the same program?}
 \vspace{5mm}
@@ -233,9 +274,29 @@ Yes but by saying \textit{same} it should be noted that two processes will use s
 
 \section*{Optimization}
 
-\newpage
+Programs are well written, not much to be done.
+\vspace{5mm}
 
-\section*{Appendix}
+In the \textbf{mainprog.c} there is an unnecessary use of if and while condition.
+
+\noindent\begin{minipage}{.45\textwidth}
+\begin{lstlisting}[caption=Original,frame=tlrb]{Original}
+while((w = wait(&status)) &&
+	         w != -1){
+	if(w != -1) ...
+}
+\end{lstlisting}
+\end{minipage}\hfill
+\begin{minipage}{.50\textwidth}
+\begin{lstlisting}[caption=Optimised,frame=tlrb]{Optimised}
+while(!(w = wait(&status))){
+   ...
+}
+\end{lstlisting}
+\end{minipage}
+
+Because return of the function \textbf{wait} will be always positive when child successfully terminates there is no need to use \textit{!= -1}.  Also the condition of \textit{w != -1} is checked three times, two inside the parenthesis of while loop and one inside the loop.
+
 
 
 

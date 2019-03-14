@@ -20,9 +20,11 @@ int main(int argc, char** argv){
 
 	int i = 0;
 
-	printf("\n Address etext: %8X\n", get_etext());
-	printf("Address edata: %8X\n", get_edata());
-	printf("Address end: %8X\n", get_end());
+	if(!fork()) i = 5;
+	printf(" i %d\n", i );
+	printf("\n Address etext: %lX\n", get_etext());
+	printf("Address edata: %lX\n", get_edata());
+	printf("Address end: %lX\n", get_end());
 
 	SHW_ADR("main", main);
 	SHW_ADR("showit", showit);
