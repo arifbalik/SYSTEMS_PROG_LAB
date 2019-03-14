@@ -95,7 +95,7 @@ It delays the system by given amount in seconds and returns \textit{0} if the am
 \section*{Theory of Operation}
 \subsection*{Part 1}
 
-\textbf{mainprog.c} runs first and immediately creates three childs and childs overlays themselves with the program \textbf{child.c} with the arguments \textit{1}, textit{2} and textit{3} respectively. Then parent process prints the ID of childs and wait them until they exit.
+\textbf{mainprog.c} runs first and immediately creates three childs and childs overlays themselves with the program \textbf{child.c} with the arguments \textit{1}, \textit{2} and \textit{3} respectively. Then parent process prints the ID of childs and wait them until they exit.
 
 In the \textbf{child.c} each child prints their pid values along with a \textit{char}, that is 0 - 256 number created from its own pid value. Then it sleeps random amount of time (0 - 5 sec). Finally if the value that have been passed trough child via \textit{argv} is checked whether it is an even or odd number, if it is even then child kills itself with the signal value \textit{9}, if not it exits with the char value mentioned above.
 
