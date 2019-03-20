@@ -18,7 +18,7 @@
 \renewcommand{\thefootnote}{\roman{footnote}}
 \DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
 
-\title{Advanced Study of Processes and Files in UNIX \\Lab. \#3}
+\title{The Study of Processes in UNIX \\Lab. \#2}
 
 \author{Arif A. Balik}
 \affil{Undergraduate Student\\
@@ -35,112 +35,228 @@
 \maketitle
 
 \begin{abstract}
-This report include advance analysis of some system calls and files in UNIX environment based on programs which provided in System Programming course. First section explains theory of operation of Part 2 of lab ssheet , second section answers some questions asked in the experiment paper, and third section suggests and implements some improvements and optimisations on the code.
+This report include analysis of some system calls in UNIX environment based on a program which provided in System Programming course. First section explains some system calls, second section answers some questions asked in the experiment paper, and third section suggests and implements some improvements and optimisations on the code.
 
 This report is powered by \LaTeX{}
 \end{abstract}
+\section*{Explanation of Some System and Library Functions}
+\subsection*{Difference between system and library functions}
+A system call is provided by the kernel and directly handled there, and a library functions are functions within programs, usually they are in the same level as shells.
+
+\subsection*{write()}
+\textit{write} is a system call used to output data to given channel (terminal, file etc.)
+
+It has the prototype;
+
+\begin{lstlisting}[frame=tlrb]
+ssize_t write(int fildes, const void *buf, size_t nbytes);
+\end{lstlisting}
+
+where \textit{fildes} is the channel that is where to write, \textit{buf} is which to write and \textit{nbytes} is how many bytes to write.
+
+\subsection*{fork()}
+The system call \textit{fork} creates an exact copy of current program. Takes no parameters and returns \textit{0} for \textit{child} process and child's id for \textit{parent} process.
+
+\subsection*{getpid()}
+The system call \textit{getpid} returns the process id of currently running process.
+
+\subsection*{getppid()}
+The system call \textit{getppid} returns the process id of currently running process's parent process.
+
+\subsection*{execl()}
+The system call \textit{excl} replaces the current program with given program. It has the form;
+
+\begin{lstlisting}[frame=tlrb]
+int execl(const char *path, const char *arg, ...);
+\end{lstlisting}
+
+where \textit{path} is the path for new executable file and \textit{arg} is arguments to pass to the new process. Function only returns \textit{-1} if there is an error. By convention the first argument to pass into new program should be the name of the program and list of arguments should end with \textit{NULL}.
+
+\subsection*{sleep()}
+In the labsheet, instructor specified the function \textit{sleep} as a library function, but in most of places it reffered as a system function.\footnote{http://www.cs.miami.edu/home/geoff/Courses/CSC521-04F/Content/UNIXProgramming/UNIXSystemCalls.shtml}
+
+But then again looking at the \textbf{unistd.h} where sleep defined, it can bee seen that it uses a well documented system call \textbf{nanosleep}.
+
+\begin{lstlisting}[frame=tlrb]
+unsigned int sleep(unsigned int seconds)
+{
+	struct timespec ts;
+	
+	ts.tv_sec = seconds;
+	ts.tv_nsec = 0;
+	if(nanosleep(&ts, &ts) == 0)
+		return 0;
+	return ts.tv_sec;
+}
+\end{lstlisting}
+
+It delays the system by given amount in seconds and returns \textit{0} if the amount of time elapsed otherwise (in case of interruption) returns the amount of time left.
 
 \section*{Theory of Operation}
 \subsection*{Part 1}
 
-Part 1 is already given in UML format.
+\textbf{mainprog.c} runs first and immediately creates three childs and childs overlays themselves with the program \textbf{child.c} with the arguments \textit{1}, \textit{2} and \textit{3} respectively. Then parent process prints the ID of childs and wait them until they exit.
+
+In the \textbf{child.c} each child prints their pid values along with a \textit{char}, that is 0 - 256 number created from its own pid value. Then it sleeps random amount of time (0 - 5 sec). Finally if the value that have been passed trough child via \textit{argv} is checked whether it is an even or odd number, if it is even then child kills itself with the signal value \textit{9}, if not it exits with the char value mentioned above.
+
 \subsection*{Part 2}
 
-The program in part to starts with creating a child process to replace itself with the \textbf{echo} program along with a text message. At the same time parent process writes the current date by calling \textbf{date} command via \textbf{execl}
+In the \textbf{procident.c} program first creates a child process than terminates itself after 3 seconds of sleep (thus child becomes orphan). In the child process, after 10 seconds of sleep, child overlays itself with \textbf{simple.c}.  Also as mentioned in the previous lab report, the variables can not effect each other after fork unless intended. 
+
+In the \textbf{simple.c} child reports its parent (\textbf{init()}) and exits.
+
+In the \textbf{procmemory.c} program creates a bunch of global and local variables and shows their virtual addresses along with the starting addresses of the program, that is \textit{etext}, \textit{edata} and \textit{end}. 
+
+INFORMAL NOTE : Honestly I did not understand why the variables have the same addresses in both child and parent processes. I tried to change the value of \textit{i} in the child process and read it both from child and parent, and as expected they yield different results, but then again their addresses are same. My expertise is on mostly embedded systems and bare-metal C, so I can't understand the concept of Virtual Memory how matter I try. I will read more documents thou.
+
+\vspace{10mm}
+\hspace{45mm}
+\begin{tabular}{|c|l|}
+\hline
+\textbf{etext}   & 0x100000DF4 \\ \hline
+\textbf{edata}   & 0x100001070 \\ \hline
+\textbf{end}     & 0x100003000 \\ \hline
+\textbf{}        &             \\ \hline
+\textbf{main}    & 0xD4EDB90   \\ \hline
+\textbf{showit}  & 0xD4EDD30   \\ \hline
+\textbf{cptr}    & 0xD4EE068   \\ \hline
+\textbf{buffer1} & 0xD4EE070   \\ \hline
+\textbf{i}       & 0x52712A4C  \\ \hline
+\textbf{buffer2} & 0x527129D8  \\ \hline
+\end{tabular}
+
+
+
+\newpage
+
 \section*{Q\&A}
-
-
-
-\subsection*{Part 1}
-
-\vspace{3mm}
-\textit{\textbf{Q1.} Why has the child process the ability to copy file 1 that is opened by the parent process?}
-\vspace{3mm}
-
-
-\vspace{3mm}
-\textit{\textbf{Q2.} Explain why files 2 and 3 can have different size and contents (after copying)?}
-\vspace{3mm}
-
-
-\vspace{5mm}
-\textit{\textbf{Q3.} Which of the processes will terminate first?}
-\vspace{5mm}
-
-\vspace{5mm}
-\textit{\textbf{Q4.} Assume that the block "Waiting for the child" in the parent part of the program put immediately after the block "Create new file 2". What will the result be?}
-\vspace{5mm}
-
-\vspace{5mm}
-\textit{\textbf{Q5.} What is the effect of large value of N?}
-\vspace{5mm}
-
-\vspace{5mm}
-\textit{\textbf{Q6.} What is the effect of the small value N?}
-\vspace{5mm}
-
-\subsection*{Part 2}
 
 \textit{\textbf{Q1.} What is the purpose of this laboratory work?}
 \vspace{3mm}
 
-The purpose is to gain a complete understanding the mechanism of processes and multithreading behaviours of the programs during concurrent file access.
+The purpose is to get an understanding of some UNIX system calls, dynamics between child and parent processes during switching between programs and understanding the Virtual Memory.
 
 \vspace{3mm}
-\textit{\textbf{Q2.} What is the purpose of system calls of \textbf{exec} family?}
+\textit{\textbf{Q2.} How mony child processes created by the parent process in \textbf{mainprog.c}?}
 \vspace{3mm}
 
-\textbf{exec} family of functions replaces the current program with a new program. It allows developer to switch between programs during execution.
+Three child processes created.
 
-\vspace{5mm}
-\textit{\textbf{Q3.} What is the purpose of system calls \textbf{wait} and \textbf{sleep}? Is there any difference between them?}
-\vspace{5mm}
+\vspace{3mm}
+\textit{\textbf{Q3.} In \textbf{mainprog.c}, a few statements are executed by each created child process. Show these statements.}
+\vspace{3mm}
 
-As the name calls, the function \textbf{wait}, keeps the program locked until a signal is given, which is the child process's exit function. The function \textbf{sleep} just locks the system for given amount of time in seconds.
-
-\vspace{5mm}
-\textit{\textbf{Q4.} What is the difference between the functions \textbf{printf} and \textbf{perror}?}
-\vspace{5mm}
-
-\textbf{perror} prints a custom message along with error messages by looking at error flags. \textbf{printf} (print formatted) prints a text with a given format, printf has nothing to do with errors.
-
-\vspace{5mm}
-\textit{\textbf{Q5.} What is the difference between system calls \textbf{exec} and \textbf{system}?}
-\vspace{5mm}
-
-\textbf{exec} overlays the program, replaces it with a program given as a parameter, \textbf{system} passes the given argument to the shell. \textbf{system} basically creates a child and calls \textbf{exec} functions.
-
-\vspace{5mm}
-\textit{\textbf{Q6.} Suppose that the child process in the program at the step 3 terminated before the parent. What will be the state of the child and how long this state will exist?}
-\vspace{5mm}
-
-In such case the child can not terminate and called zombie and it will remain until the parent process terminates.
-
-\vspace{5mm}
-\textit{\textbf{Q7.} Is it possible for a parent process in the program at the step 3 to terminate before child process? What will be the new parent for the child process.}
-\vspace{5mm}
-
-Such a child is called \textbf{orphan}, and \textbf{init} takes control over the process and becomes its new parent.
-
-\vspace{5mm}
-\textit{\textbf{Q8.} Why the order of printing messages by the processes in step 3 is not always correct?}
-\vspace{5mm}
-
-Because parent does not wait for child to terminate to print its message, in some cases that causes parent to finish first and print the message before child.
-
-\section*{Optimization}
-
-\subsection*{Part 2}
-
-It defeats the purpose of the program but, it is very pleasing to optimise entire program down to a single line of code.
-
-\vspace{2mm}
-\begin{minipage}{1\textwidth}
 \begin{lstlisting}[frame=tlrb]
-system("echo Todays date is && date '+Date = %D Time = %H:%M'");
+sprintf(value, "%d", i);
+execl("child", "child", value, 0);
+\end{lstlisting}
+
+\vspace{5mm}
+\textit{\textbf{Q4.} In \textbf{mainprog.c}, to what program is child process switched? Show and explain the corresponding statement. Does a child process return to the \textbf{mainprog} after finishing another program (explain, why yes/no)?}
+\vspace{5mm}
+
+Child processes switched to \textbf{child.c}.
+
+Child does not returns to \textbf{mainprog.c} because when \textbf{execl} called, it replaces the current program with \textbf{child.c}, there is no way that child can return.\footnote{Unless \textbf{mainprog.c} called again in \textbf{child.c} using \textbf{execl}}
+
+Also, in the program either process kills itself or exits.
+
+\vspace{5mm}
+\textit{\textbf{Q5.} Which statements are NOT executed by the parent process in \textbf{mainprog.c}?}
+\vspace{5mm}
+
+Statements shown in \textbf{Q3.}
+
+\vspace{5mm}
+\textit{\textbf{Q6.} What is the purpose of system call \textbf{wait()} in \textbf{mainprog.c}? What results are extracted by the parent process from this system call?}
+\vspace{5mm}
+
+The function \textbf{wait} puts parent process into sleep until child processes exits. It returns the ID of child process who terminated and fills the variable which given as a parameter with the exit status given by the child when terminating.
+\newpage
+\vspace{5mm}
+\textit{\textbf{Q7.} Is it possible for a child process to continue its work after the parent process terminates? What will the parent be for such a child? Prove your answer based on the results of the Part 2 of this lab work.}
+\vspace{5mm}
+
+Yes. When parent terminates before child process, then that process called \textit{orphan}, and \textbf{init} function takes over the role of parent which has a pid of 1.
+
+As we can see from the output of the program \textbf{procident.c}, parent terminates before the child, and child still runs and outputs its parent process id which is 1.
+
+\begin{lstlisting}[frame=tlrb]
+Child: my ID = 5219, i = 2
+Child: my parent ID = 5218
+Parent: my ID = 5218, i = 0
+Parent terminating...
+Arif-MacBook-Pro:lab2 celimless$ 
+ Child after sleping: my ID = 5219
+ Child after sleping: my parent ID = 1
+NEW PROGRAM simple IS STARTED BY TH CHILD PROCESS
+Child: my ID = 5219
+Child: my parent ID = 1
+Child: terminating...
+\end{lstlisting}
+\vspace{5mm}
+\textit{\textbf{Q8.} What is the purpose of directive \textbf{\#define} in the program \textbf{procmemory.c}?}
+\vspace{5mm}
+\textbf{\#define} is a preprocessor, it has no use as a compiled program but it gives developer the ability to create more modular and readable code. In the \textbf{procmemory.c} compiler simply pastes the contents wherever it sees the definition \textbf{SHW\_ADR}. Also the definition behaves as a function but has no effect on program as such.
+For example, if developer calls this definition \textit{SHW\_ADR("x",x)}, compiler changes that line as follows; 
+\begin{lstlisting}[frame=tlrb]
+printf("ID %s \t is at virtual address: %8X\n", "x", &x)
+\end{lstlisting}
+\vspace{5mm}
+\textit{\textbf{Q9.} What is the meaning of the variables \textbf{etext}, \textbf{edata} and \textbf{end} in \textbf{procmemory.c}? Why are these variables declared with the word \textbf{extern}?}
+\vspace{3mm}
+The variables \textbf{etext}, \textbf{edata} and \textbf{end} represents segments of the program, such as variable environment, text segment etc. They are provided by linker and dangerous to use as stated by Linux man page. For instance macOS does not allow to access does variables directly, it rather provides some functions which returns the values of those variables.
+\textbf{extern} keyword gives variable the ability to extend itself throughout the source files. But it only declares the variable, not defines it. In order to use the variable, it has to be defined somewhere in the source program, or in a library.
+\vspace{5mm}
+\newpage
+\textit{\textbf{Q10.} Suppose that a variable i was declared and assigned some value in the parent process before the creation of a child process. Will this variable be accessible to the child process? Will the parent process see the change made in this variable by the child process?}
+\vspace{5mm}
+Every variable is copied and transferred to new locations with their last values in the process of fork. So the child could access to the variable but it would be isolated from parent's variable even thou they are in the same source file, have the same name, and same definition etc.
+\vspace{5mm}
+\textit{\textbf{Q11.} Is \textbf{malloc()} a system call or a library function? Can you guess it looking at your program?}
+\vspace{5mm}
+Knowing whether is a function a system call or not is not possible by looking at the source file but few comments can be made.
+\textbf{malloc} used to allocate memory, so it has to deal with low level sources but as in \textbf{printf} - \textbf{write} relationship, \textbf{malloc} may use some other system calls to accomplish the task of allocation.
+According to the \textit{Linux Programmer's Manual} \textbf{malloc} is not a system call.\footnote{http://man7.org/linux/man-pages/man2/syscalls.2.html}
+\vspace{5mm}
+\textit{\textbf{Q12.} What is the meaning of two parameters of the function \textbf{main()} in the program \textbf{child.c}? What is \textbf{argv[1]} in this program?}
+\vspace{5mm}
+The first parameter \textbf{argc} gives the number of arguments given as an input when executable file started, and second one gives the values of those parameters. 
+\textbf{argv[1]} is the number of the child which is the variable \textit{i} in the \textbf{mainprog.c}
+\vspace{5mm}
+\textit{\textbf{Q13.} What is the purpose of system calls \textbf{getpid} and \textbf{getppid}?}
+\vspace{5mm}
+ \textbf{getpid} returns the value of current process and  \textbf{getppid} returns the value of parent process of the current process. It is usually used to create unique file names, but can be used to make child and parent processes to do different things in the same source file.
+\vspace{5mm}
+\textit{\textbf{Q14.} Is it possible for a process to use more than one program?}
+\vspace{5mm}
+No. A process can run one program at a time. But it can use multithreading which is not same as running multiple programs. It can also trigger other programs to run them, but then again it does not mean the process runs that program.
+\newpage
+\vspace{5mm}
+\textit{\textbf{Q15.} Is it possible for two or more processes to use the same program?}
+\vspace{5mm}
+Yes but by saying \textit{same} it should be noted that two processes will use same source code and will run two identical programs at the same time separately.
+\vspace{5mm}
+\textit{\textbf{Q16.} What is the purpose of the system calls of the \textbf{exec} family? Does this system call return any result (in case it succeeds or fails)?}
+\vspace{5mm}
+\textbf{exec} system calls used to alter the current program and replace it and naturally they have no return values unless there is an error, which will return -1.
+\section*{Optimization}
+Programs are well written, not much to be done. In the \textbf{mainprog.c} there is an unnecessary use of if and while condition.
+
+\noindent\begin{minipage}{.45\textwidth}
+\begin{lstlisting}[caption=Original,frame=tlrb]{Original}
+while((w = wait(&status)) &&
+	         w != -1){
+	if(w != -1) ...
+}
+\end{lstlisting}
+\end{minipage}\hfill
+\begin{minipage}{.50\textwidth}
+\begin{lstlisting}[caption=Optimised,frame=tlrb]{Optimised}
+while(!(w = wait(&status))){
+   ...
+}
 \end{lstlisting}
 \end{minipage}
-
-
-
+Because return of the function \textbf{wait} will be always positive when child successfully terminates there is no need to use \textit{!= -1}.  Also the condition of \textit{w != -1} is checked three times, two inside the parenthesis of while loop and one inside the loop.
 \end{document}  
