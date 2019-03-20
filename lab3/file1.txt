@@ -1,0 +1,94 @@
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/uio.h>
+#include <sys/time.h>
+#include <unistd.h>
+
+#define HELP "./file [arg1] [arg2] [arg3]"
+
+#define __FILE1 3
+#define __FILE2 4
+#define __FILE3 5
+#define PARENT_READ_BLOCK 10
+#define CHILD_READ_BLOCK 20
+
+#define WAIT 100
+
+int main(int argc, char** argv)
+{
+	char *block;
+	int bytes, i;
+	
+	if(argc != 4){
+		printf("Invalid argument count. Please use the following standart\n"HELP"\n" );
+		exit(1);
+	}
+
+	if(open(argv[1], O_RDONLY)){
+		perror("Oops!");
+		exit(1);
+	}
+
+	if(!fork()){
+		if(open(argv[3], O_CREAT|O_WRONLY|O_TRUNC, 0666)){
+			perror("Oops!");
+			exit(1);
+		}
+		bytes = read(__FILE1, block, CHILD_READ_BLOCK);
+		switch(bytes){
+			case 0:
+				printf("Child: File 1: EOF\n");
+				close(__FILE3);
+				exit(1);
+			break;
+			case CHILD_READ_BLOCK:
+				i = WAIT;
+				while(i--);
+				if(write(__FILE3, block, CHILD_READ_BLOCK) != CHILD_READ_BLOCK){
+					printf("Error during write into File 3\n");
+					exit(1);
+				}
+			break;
+			default:
+				printf("Error during read into File 1\n");
+				exit(1);
+			break;
+		}
+
+		exit(1);
+	}
+
+	if(open(argv[2], O_CREAT|O_WRONLY|O_TRUNC, 0666)){
+		perror("Oops!");
+		exit(1);
+	}
+
+	bytes = read(__FILE1, block, PARENT_READ_BLOCK);
+
+	switch(bytes){
+		case 0:
+			printf("Parent: File 1: EOF\n");
+			close(__FILE2);
+			wait(0);
+			close(__FILE1);
+			exit(1);
+		break;
+		case PARENT_READ_BLOCK:
+			i = WAIT;
+			while(i--);
+			if(write(__FILE2, block, PARENT_READ_BLOCK) != PARENT_READ_BLOCK){
+				printf("Error during write into File 2\n");
+				exit(1);
+			}
+		break;
+		default:
+			printf("Error during read into File 1\n");
+			exit(1);
+		break;
+	}
+
+}

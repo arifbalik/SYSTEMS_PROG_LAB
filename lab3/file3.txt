@@ -1,0 +1,64 @@
+ <stdio.h>
+#include 
+#include <fcntl.h>
+sys/types.h>
+#includ.h>
+#include <sys/tilude <unistd.h>
+
+#de"./file [arg1] [arg2
+#define __FILE1 3
+#ILE2 4
+#define __FILne PARENT_READ_BLOCKe CHILD_READ_BLOCK 2 WAIT 100
+
+int main(char** argv)
+{
+	charint bytes, i;
+	
+	if({
+		printf("Invalid se use the followingn"HELP"\n" );
+		exit(1);
+	}
+
+	if(open(arDONLY)){
+		perror("Oexit(1);
+	}
+
+	if(!fof(open(argv[3], O_CRLY|O_TRUNC, 0666)){
+"Oops!");
+			exit(1)tes = read(__FILE1, LD_READ_BLOCK);
+		sw){
+			case 0:
+				prd: File 1: EOF\n");
+__FILE3);
+				exit(1k;
+			case CHILD_REA			i = WAIT;
+				whi			if(write(__FILE3,ILD_READ_BLOCK) != CBLOCK){
+					printf(ing write into File 		exit(1);
+				}
+			default:
+				printf(ing read into File 1exit(1);
+			break;
+	(1);
+	}
+
+	if(open(arREAT|O_WRONLY|O_TRUN
+		perror("Oops!");
+
+	}
+
+	bytes = read(_ock, PARENT_READ_BLOtch(bytes){
+		case 0f("Parent: File 1: E	close(__FILE2);
+					close(__FILE1);
+				break;
+		case PAREOCK:
+			i = WAIT;
+		);
+			if(write(__FIL PARENT_READ_BLOCK) READ_BLOCK){
+				pri during write into F
+				exit(1);
+			}
+		break;
+		default:
+	Error during read inn");
+			exit(1);
+		b}
