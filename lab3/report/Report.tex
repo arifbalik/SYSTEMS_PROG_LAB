@@ -13,6 +13,9 @@
 \usepackage{listings}
 \usepackage{parcolumns}
 \usepackage{hyperref}
+\usepackage{blindtext,pdflscape}
+\usepackage{rotating}
+\usepackage{fancyhdr}
 
 
 \renewcommand{\thefootnote}{\roman{footnote}}
@@ -57,27 +60,37 @@ The program in part to starts with creating a child process to replace itself wi
 \textit{\textbf{Q1.} Why has the child process the ability to copy file 1 that is opened by the parent process?}
 \vspace{3mm}
 
+Unix has a file description structure which keeps the current position in the file, path of the file, file descriptor etc. When the function \textbf{fork} called, it copies this structure to child, thus child can access the files those opened before the \textbf{fork}
 
 \vspace{3mm}
 \textit{\textbf{Q2.} Explain why files 2 and 3 can have different size and contents (after copying)?}
 \vspace{3mm}
 
+Because of the amount of bytes are different that child and parent reads from the file.
 
 \vspace{5mm}
 \textit{\textbf{Q3.} Which of the processes will terminate first?}
 \vspace{5mm}
 
+It depends on which process read the last byte. It is highly probable the child process finishes first because it reads more data but first they work on the same file so size does not matter too much, and parent always waits for the child to terminate.
+
 \vspace{5mm}
 \textit{\textbf{Q4.} Assume that the block "Waiting for the child" in the parent part of the program put immediately after the block "Create new file 2". What will the result be?}
 \vspace{5mm}
+
+\textit{File 2} would be empty because parent would wait for the child to terminate, hence child wont terminate until it reads all the file. After termination of child, parent would try to read and get \textit{END OF FILE} from \textbf{read} function.
 
 \vspace{5mm}
 \textit{\textbf{Q5.} What is the effect of large value of N?}
 \vspace{5mm}
 
+Because of the uncertainty mentioned in the last lab sheets, it can cause the sizes of the \textit{file 2} and \textit{file 3} to be too different from each other.
+
 \vspace{5mm}
 \textit{\textbf{Q6.} What is the effect of the small value N?}
 \vspace{5mm}
+
+Vice versa.
 
 \subsection*{Part 2}
 
@@ -138,6 +151,116 @@ It defeats the purpose of the program but, it is very pleasing to optimise entir
 \begin{minipage}{1\textwidth}
 \begin{lstlisting}[frame=tlrb]
 system("echo Todays date is && date '+Date = %D Time = %H:%M'");
+\end{lstlisting}
+\end{minipage}
+
+\newpage
+
+\section*{Appendix}
+
+\thispagestyle{empty}
+
+\begin{minipage}{1\textwidth}
+\begin{lstlisting}[title=Part 1 Source Code, frame=tlrb, basicstyle=\tiny]
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#define HELP "./part1 [file1] [file2] [file3]"
+
+#define OPEN 1
+#define CREATE 0
+#define OPEN_FILE(path, o_c, fd)	fd = ((o_c) ? open(path, O_RDONLY) :\
+						 open(path, O_CREAT|O_WRONLY|O_TRUNC, 0666));\
+					if(fd == -1){\
+						perror("Error while file creation/opening");\
+						exit(1);\
+					}
+
+
+
+#define PARENT_READ_BLOCK 10
+#define CHILD_READ_BLOCK 20
+
+#define WAIT 1
+
+int read_write(int fd_read, int fd_write, int size){
+	char* block;
+	int i;
+	short bytes;
+
+	block = (char*)malloc((char)size);
+
+	bytes = read(fd_read, block, size);
+	switch(bytes){
+		case 0:
+			printf("%s File 1: EOF\n", 
+				(size == PARENT_READ_BLOCK) ? "Parent" : "Child");
+			goto eof;
+		break;
+		case -1:
+			perror("Error during read from File 1");
+			goto error;
+		break;
+		default:
+			if(bytes == size){
+				i = WAIT;
+				while(i--);
+				if(write(fd_write, block, size) != size){
+				perror("Error during write into File 3");
+				goto error;
+				}
+				return 1; //ready for the next sequence
+			}else if(bytes > 0){ 
+				write(fd_write, block, bytes);
+				printf("%s File1: EOF with %d bytes\n",
+				(size == PARENT_READ_BLOCK) ? "Parent" : "Child", bytes);
+			}else{
+				printf("Error during read File 1. bytes: %d\n",bytes);
+				goto error;
+			}
+			goto eof;
+		break;
+	}
+
+	error:
+	free(block);
+	exit(1);
+
+	eof:
+	free(block);
+	return 0;
+}
+
+int main(int argc, char** argv)
+{
+	short fd1, fd2, fd3;
+
+	if(argc != 4){
+		printf("Invalid argument count. Help\n"HELP"\n" );
+		exit(1);
+	}
+
+	OPEN_FILE(argv[1], OPEN, fd1);
+
+	if(!fork()){
+		OPEN_FILE(argv[3], CREATE, fd3);
+		while(read_write(fd1, fd3, CHILD_READ_BLOCK));
+		close(fd3);
+		exit(1);
+	}
+
+	OPEN_FILE(argv[2], CREATE, fd2);
+	
+	while(read_write(fd1, fd2, PARENT_READ_BLOCK));
+	
+	close(fd2);
+	wait(0);
+	close(fd3);
+	
+}
 \end{lstlisting}
 \end{minipage}
 

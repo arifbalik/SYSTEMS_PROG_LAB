@@ -21,7 +21,7 @@
 #define PARENT_READ_BLOCK 10
 #define CHILD_READ_BLOCK 20
 
-#define WAIT 1000
+#define WAIT 1
 
 int read_write(int fd_read, int fd_write, int size){
 	char* block;
