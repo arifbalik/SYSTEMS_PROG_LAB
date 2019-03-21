@@ -123,6 +123,17 @@ As the name calls, the function \textbf{wait}, keeps the program locked until a 
 
 \textbf{exec} overlays the program, replaces it with a program given as a parameter, \textbf{system} passes the given argument to the shell. \textbf{system} basically creates a child and calls \textbf{exec} functions.
 
+\begin{minipage}{1\textwidth}
+\begin{lstlisting}[title=procexec/system.c - The Linux Programming Interface \text{(Listing 27-9, page 586)}, frame=tlrb]
+switch (childPid = fork()) {
+    case -1: /* fork() failed */
+        status = -1;
+        break;    /* Carry on to reset signal attributes */
+
+    case 0: /* Child: exec command */
+ \end{lstlisting}
+\end{minipage}
+
 \vspace{5mm}
 \textit{\textbf{Q6.} Suppose that the child process in the program at the step 3 terminated before the parent. What will be the state of the child and how long this state will exist?}
 \vspace{5mm}
