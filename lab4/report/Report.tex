@@ -1,0 +1,620 @@
+\documentclass[11pt]{article}
+\usepackage{geometry}                
+\geometry{a4paper}                  
+
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{epstopdf}
+\usepackage{authblk}
+\usepackage{amsmath}
+\usepackage{sectsty}
+\graphicspath{ {figures/} }
+\usepackage{caption}
+\usepackage{listings}
+\usepackage{parcolumns}
+\usepackage{hyperref}
+\usepackage{blindtext,pdflscape}
+\usepackage{rotating}
+\usepackage{fancyhdr}
+\usepackage{csquotes}
+
+
+\renewcommand{\thefootnote}{\roman{footnote}}
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+
+\title{Understanding Threads in a UNIX System \\Lab. \#4}
+
+\author{Arif A. Balik}
+\affil{Undergraduate Student\\
+	Sytstems Programming\\
+	Department of Computer Science\\
+	Arel University\\
+	Büyükçekmece, İstanbul 34537\\
+    Email: arifbalik@outlook.com
+}
+
+%\date{March 5, 2019}                                           % Activate to display a given date or no date
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This report include analysis of threads in UNIX environment based on programs which provided in System Programming course. First section explains theory of operation, second section answers some questions asked in the experiment paper, and third section suggests and implements some improvements and optimisations on the code.
+
+This report is powered by \LaTeX{}
+\end{abstract}
+
+\section*{Theory of Operation}
+
+\subsection*{Single Thread Application}
+For the first part, there is a single threaded application which does nothing but running a loop, calling two functions and calculating the amount of time it took to execute the program. Program executes in a very standart sequence as expected.
+
+Following figure shows the timeline of the program. First column shows the time which functions occurred and the other columns show which one occurred. The number in square brackets is the value of the variable \textbf{r1}
+
+\begin{minipage}{1\textwidth}
+\begin{lstlisting}[title=Timeline (singlethread.c), frame=tlrb]
+|0sec	|main[0]	|		|
+|3sec	|main[0]	|		|
+|6sec	|main[0]	|		|
+|9sec	|		|func1[0]	|
+|13sec	|		|func1[0]	|
+|17sec	|		|func1[0]	|
+|21sec	|		|func1[0]	|
+|25sec	|		|func1[0]	|
+|29sec	|		|func1[0]	|
+|33sec	|		|func1[0]	|
+|37sec	|		|func1[0]	|
+|41sec	|		|func1[0]	|
+|45sec	|		|		|func2[0]
+|48sec	|		|		|func2[0]
+|51sec	|		|		|func2[0]
+|54sec	|		|		|func2[0]
+|57sec	|		|		|func2[0]
+|60sec	|		|		|func2[0]
+|63sec	|		|		|func2[0]
+\end{lstlisting}
+\end{minipage}
+
+As seen in the output of the program, \textbf{main} thread runs 3 times with 3 second intervals, \textbf{func1} runs 9 times with 4 second intervals and \textbf{func2} runs 7 times with 3 second intervals.
+
+\subsection*{Multi Thread Application}
+In \textbf{multithread.c}, program creates two threads as \textbf{func1} and \textbf{func2} respectively. Then it runs just as same as single threaded application. But observe the output of the program;
+
+First as they execute simultaneously, their occurrence is somewhat random, it can be observed by running the program several times. And because they work at the same time, the total time of execution is half the size of single thread application. Also the reason of the randomness in the occurrence is because the delay time of each functions is different.
+
+There is no \textbf{race condition} (race condition will be discussed in the \textbf{Q\&A} section in further detail) because \textbf{mutex} is implemented, but then again this program can hardly create a race condition without mutex, since the occurrence of threads is relatively separate.
+
+\begin{minipage}{1\textwidth}
+\begin{lstlisting}[title=Timeline (multithread.c), frame=tlrb]
+|0sec	|main[101]	|		|
+|0sec	|		|		|func2[101]
+|0sec	|		|func1[101]	|
+|3sec	|		|		|func2[101]
+|3sec	|main[102]	|		|
+|4sec	|		|func1[102]	|
+|6sec	|main[103]	|		|
+|6sec	|		|		|func2[103]
+|8sec	|		|func1[103]	|
+|9sec	|		|		|func2[103]
+|12sec	|		|func1[103]	|
+|12sec	|		|		|func2[103]
+|15sec	|		|		|func2[103]
+|16sec	|		|func1[103]	|
+|18sec	|		|		|func2[103]
+|20sec	|		|func1[103]	|
+|24sec	|		|func1[103]	|
+|28sec	|		|func1[103]	|
+|32sec	|		|func1[103]	|
+\end{lstlisting}
+\end{minipage}
+
+The program has been tested without waiting threads to terminate. The expected result should be that after \textbf{main} function terminates, all the threads will be lost and total execution time is 9 seconds since the loop in the main function runs 3 times wirh 3 second delay. The following output shows the results.
+
+\begin{minipage}{1\textwidth}
+\begin{lstlisting}[title=Timeline (multithread.c) without wait, frame=tlrb]
+|0sec	|main[101]	|		|
+|0sec	|		|		|func2[101]
+|0sec	|		|func1[101]	|
+|3sec	|		|		|func2[102]
+|3sec	|main[102]	|		|
+|4sec	|		|func1[102]	|
+|6sec	|		|		|func2[102]
+|6sec	|main[103]	|		|
+|8sec	|		|func1[103]	|
+|9sec	|		|		|func2[103]
+\end{lstlisting}
+\end{minipage}
+
+Indeed, results proves the assumption.
+
+\newpage
+\subsection*{Multi Process Application}
+In \textbf{multiprocess.c} the only difference is creation of threads is done by processes. But outcomes are not even close.
+
+Following output shows the results of running the program.
+
+\begin{minipage}{1\textwidth}
+\begin{lstlisting}[title=Timeline (multiprocess.c), frame=tlrb]
+|0sec	|main[101]	|		|
+|0sec	|		|func1[0]	|
+|0sec	|		|		|func2[0]
+|3sec	|		|		|func2[0]
+|3sec	|main[102]	|		|
+|4sec	|		|func1[0]	|
+|6sec	|		|		|func2[0]
+|6sec	|main[103]	|		|
+|8sec	|		|func1[0]	|
+|9sec	|		|		|func2[0]
+|12sec	|		|func1[0]	|
+|12sec	|		|		|func2[0]
+|15sec	|		|		|func2[0]
+|16sec	|		|func1[0]	|
+|18sec	|		|		|func2[0]
+|20sec	|		|func1[0]	|
+|24sec	|		|func1[0]	|
+|28sec	|		|func1[0]	|
+|32sec	|		|func1[0]	|
+\end{lstlisting}
+\end{minipage}
+
+First noticeable thing is that the values for \textbf{r1} is not the same with \textbf{main}. That is because processes copied the variables to new spaces so their addresses are no longer the same with \textbf{main}.
+
+And the other interesting behaviour is when \textbf{main} function terminates without waiting anything to terminate, the threads continues their execution. Again that is because processes created their own environment which is isolated enough for threads to continue. So we would get the same output as above.\footnote{that is, when childs wait for the threads to terminate to terminate themselves }
+
+\newpage
+\section*{Q\&A}
+
+\vspace{3mm}
+\textit{\textbf{Q1.} What is a program thread?}
+\vspace{3mm}
+
+Threads are some kind of process, \textbf{dependently}\footnote{by means of memory} and concurrently running within the parent process.
+
+\begin{displayquote}
+To Linux, a thread is just a special kind of process. (Linux Kernel Development, 2011, p. 29)
+\end{displayquote}
+
+\vspace{3mm}
+\textit{\textbf{Q2.} What is the purpose of using threads in programs?}
+\vspace{3mm}
+
+As seen in the section \textbf{Theory of Operation}, it reduces the amount of time for a program to do a certain job and increases performance.
+
+\vspace{5mm}
+\textit{\textbf{Q3.} Is there any difference between processes and threads (explain)?}
+\vspace{5mm}
+
+Yes. Threads are sharing the same address space as parent process, and threads naturally can only work locally.
+
+\vspace{5mm}
+\textit{\textbf{Q4.} When is the real parallelism of thread execution is possible?}
+\vspace{5mm}
+
+In fact, there is no such thing, but when kernel decides to run the thread in a different \textbf{physical} core, then thread has the possibility to achieve parallel computation. Otherwise kernel just schedules the codes in an order to simulate parallelism.
+
+\vspace{5mm}
+\textit{\textbf{Q5.} What thread standard is implemented in UNIX Systems?}
+\vspace{5mm}
+
+POSIX. Hence the name \textbf{p} in the first character of functions related to threading.
+
+\vspace{5mm}
+\textit{\textbf{Q6.} Are threads available in Windows operating systems?}
+\vspace{5mm}
+
+Yes. By definition, an operating system should be able to run multiple programs simultaneously, this includes threads as well.
+
+\vspace{5mm}
+\textit{\textbf{Q7.} How many threads are there in a program when it just starts (that is, at the very beginning)?}
+\vspace{5mm}
+
+There is only one called \textit{main} thread.
+
+\vspace{5mm}
+\textit{\textbf{Q8.} Is it possible to change the number of threads in a program during its execution (explain)?}
+\vspace{5mm}
+
+Yes. For threads to have meaning program has to have the ability to create and terminate threads. In UNIX this can be achieved with the function \textbf{pthread\_create}.
+
+Kernel hold all the information of threads and processes in a structure called \textbf{task\_struct} which is located in the kernel \textbf{include/linux/sched.h}, this allows kernel to dynamically add and remove threads.
+
+\begin{lstlisting}[frame=tlrb]
+struct task_struct {
+#ifdef CONFIG_THREAD_INFO_IN_TASK
+	/*
+	 * For reasons of header soup 
+	 * (see current_thread_info()), this
+	 * must be the first element of task_struct.
+	 */
+	struct thread_info		thread_info;
+#endif
+	/* -1 unrunnable, 0 runnable, >0 stopped: */
+	volatile long			state;
+
+\end{lstlisting}
+
+\vspace{5mm}
+\textit{\textbf{Q9.} How can a new thread be created in a program?}
+\vspace{5mm}
+
+Using \textbf{pthread\_create} in the standart library \textbf{pthread.h}.
+
+\vspace{5mm}
+\textit{\textbf{Q10.} Assume that the main (primary) thread in a program have created two new (secondary) threads and wants to continue its work only after these two new threads finish their work. Which function call should be used by the main thread for this purpose?}
+\vspace{5mm}
+
+\textbf{pthread\_join}
+
+\vspace{5mm}
+\textit{\textbf{Q11.} How will a thread, after having been created by the main function, learn what routine (function) it should use to perform its work? Is this routine a part of the main function or it should be specified outside the main function?}
+\vspace{5mm}
+
+It is given by the main program as a pointer to function during its creation via the first argument of the function  \textbf{pthread\_create}. It can locate anywhere as long as it is compiled with the main program.
+
+\vspace{5mm}
+\textit{\textbf{Q12.} Is it possible for two or more threads to use the same routine (function)?}
+\vspace{5mm}
+
+Yes, because kernel calls the function from different sources, but it can be dangerous as they try to access same variable.
+
+\newpage
+\vspace{5mm}
+\textit{\textbf{Q13.} Suppose that main thread, after the creation of a number of new threads, terminates. What will be with the created secondary running threads in this case?}
+\vspace{5mm}
+
+It will terminate since it has no environment to exist after main terminates.
+
+\vspace{5mm}
+\textit{\textbf{Q14.} Is it possible to run a multithreaded program on a multiprocessor or a few computers connected to a network?}
+\vspace{5mm}
+
+Threads meant to work on multiprocessor, they are more efficient that way but they can't work on different machines.
+
+\vspace{5mm}
+\textit{\textbf{Q15.} Suppose that two or more threads use (read and/or write) the same global data defined in the program. What can happen if you don't undertake same precautions? What should these precautions be?}
+\vspace{5mm}
+
+When multiple threads tries to access and change a variable, something called \textbf{race condition} occurs. That may create some unpredictable results. For example let one thread have an \textit{if} condition that checks value of a variable and inside of the \textit{if} condition it changes value of that variable, but at the same time, when the thread checks the variable and goes into the \textit{if} condition, some other thread may change the value of that variable and cause critical damage.
+
+To prevent such conditions UNIX offers a method called \textbf{thread locking} and it can be enabled by using a set of functions, such as \textbf{pthread\_mutex\_lock} which locks the access to resources in the region between \textbf{pthread\_mutex\_lock} and \textbf{pthread\_mutex\_unlock}.
+
+For example in the \textbf{multithread.c} the variable \textbf{r1} can be safe from race conditions with the following code;
+
+\begin{lstlisting}[frame=tlrb]
+pthread_mutex_lock(&lock);
+r1 = 100 + j;
+pthread_mutex_unlock(&lock);
+\end{lstlisting}
+
+
+\vspace{5mm}
+\textit{\textbf{Q16.} Is programming with threads easier than programming without threads (explain)?}
+\vspace{5mm}
+
+It depends. For developer, it is easier to think and act safely in a single threaded program. But in real world a lot of applications requires multithreading, for example, it would be almost impossible to stream data from ethernet and drive an LCD display smoothly with a single threaded application because both of those peripherals requires complex and long protocols. So, how hard it is to work with threads becomes more and more irrelevant as they become unavoidable with the needs of modern technology.
+
+\section*{Optimization}
+
+By giving up the microsecond resolution, time calculation can rid of heavy arithmetic operations.
+
+\begin{lstlisting}[title=Original,frame=tlrb]{Original}
+(float)((1000000*time2.tv_sec + time2.tv_usec) - 
+(1000000*time1.tv_sec + time1.tv_usec))/1000000
+\end{lstlisting}
+
+
+\begin{lstlisting}[title=Optimised,frame=tlrb]{Optimised}
+time2.tv_sec - time1.tv_sec
+\end{lstlisting}
+
+There are other optimisations. Check Appendix for more.
+
+
+\newpage
+\section*{Appendix}
+
+\thispagestyle{empty}
+
+\begin{minipage}{1\textwidth}
+\begin{lstlisting}[title=singlethread.c, frame=tlrb, basicstyle=\tiny]
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/time.h>
+#include <pthread.h>
+#include "timing.h"
+
+void func1(void);
+void func2(void);
+
+
+int r1 = 0, r2 = 0;
+struct timeval time1, time2;
+pthread_mutex_t lock; //we need this for func1 and func2 to work
+
+int main(int argc, char **argv){
+	char* text = (char *)malloc(20);
+	#ifdef DRAW_TIMING_DIAGRAM
+		system("clear");
+	#else
+		printf("Single threaded process starts here...\n");
+	#endif
+
+	gettimeofday(&time1, 0);
+	
+	for (int j = 1; j < 4; ++j){
+		#ifdef DRAW_TIMING_DIAGRAM
+			sprintf(text, "\t|main[%d]\t|\t\t|\n",r1);
+			time_line(text);
+		#else
+			printf("Main function of the process works: %d\n", j);
+		#endif
+		
+		sleep(3);
+	}
+	
+
+	func1();
+	func2();
+	gettimeofday(&time2, 0);
+	printf("Main: Total elapsed time = %ld seconds\n", time2.tv_sec - time1.tv_sec);
+	printf("Main thread terminated...\n");
+
+	free(text);
+	return 0;
+}
+\end{lstlisting}
+\end{minipage}
+\newpage
+\thispagestyle{empty}
+\begin{minipage}{1\textwidth}
+\begin{lstlisting}[title=multithread.c, frame=tlrb, basicstyle=\tiny]
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/time.h>
+#include <pthread.h>
+#include "timing.h"
+
+void func1(void);
+void func2(void);
+
+
+int r1 = 0, r2 = 0;
+struct timeval time1, time2;
+pthread_mutex_t lock;
+
+int main(int argc, char **argv){
+	pthread_t td1, td2;
+	int p;
+	char* text = (char *)malloc(20);
+
+	#ifdef DRAW_TIMING_DIAGRAM
+		system("clear");
+	#else
+		printf("Single threaded process starts here...\n");
+	#endif
+
+	gettimeofday(&time1, 0);
+	
+	p = pthread_create(&td1, NULL, (void *)func1, NULL);
+	
+	if(p != 0){
+		perror("Thread 1 creation problem");
+		exit(1);
+	}
+
+	p = pthread_create(&td2, NULL, (void *)func2, NULL);
+
+	if(p != 0){
+		perror("Thread 2 creation problem");
+		exit(1);
+	}
+
+	for (int j = 1; j < 4; ++j){
+		pthread_mutex_lock(&lock);
+			r1 = 100 + j;
+		pthread_mutex_unlock(&lock);
+		#ifdef DRAW_TIMING_DIAGRAM
+			sprintf(text, "\t|main[%d]\t|\t\t|\n",r1);
+			time_line(text);
+		#else
+			printf("Main function of the process works: %d\n", j);
+		#endif
+		sleep(3);
+	}
+
+	//pthread_join(td1, NULL);
+	//pthread_join(td2, NULL);
+
+	pthread_mutex_lock(&lock);
+	gettimeofday(&time2, 0);
+	delta = (time2.tv_sec - time1.tv_sec);
+	pthread_mutex_unlock(&lock);
+	printf("Main: Total elapsed time = %f seconds\n", delta);
+	printf("Main thread terminated...\n");
+
+	return 0;
+}
+\end{lstlisting}
+\end{minipage}
+\newpage
+\thispagestyle{empty}
+\begin{minipage}{1\textwidth}
+\begin{lstlisting}[title=multiprocess.c, frame=tlrb, basicstyle=\tiny]
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/time.h>
+#include <pthread.h>
+#include "timing.h"
+
+void func1(void);
+void func2(void);
+
+
+int r1 = 0, r2 = 0;
+struct timeval time1, time2;
+pthread_mutex_t lock;
+
+int main(int argc, char **argv){
+	pthread_t td1, td2;
+	int pid, c_pid;
+	int p;
+	float delta;
+	char* text = (char *)malloc(20);
+
+	#ifdef DRAW_TIMING_DIAGRAM
+		system("clear");
+	#else
+		printf("Single threaded process starts here...\n");
+	#endif
+
+	gettimeofday(&time1, 0);
+	
+	pid = fork();
+
+	if(pid < 0){
+		perror("Error during child1 creation");
+		exit(1);
+	}
+	if(pid == 0){
+		p = pthread_create(&td1, NULL, (void *)func1, NULL);
+		
+		if(p != 0){
+			perror("Thread 1 creation problem");
+			exit(1);
+		}
+		pthread_join(td1, NULL);
+		exit(1);
+	}
+
+	pid = fork();
+
+	if(pid < 0){
+		perror("Error during child2 creation");
+		exit(1);
+	}
+	if(pid == 0){
+		p = pthread_create(&td2, NULL, (void *)func2, NULL);
+
+		if(p != 0){
+			perror("Thread 2 creation problem");
+			exit(1);
+		}
+		pthread_join(td2, NULL);
+		exit(1);
+	}
+
+	for (int j = 1; j < 4; ++j){
+		pthread_mutex_lock(&lock);
+			r1 = 100 + j;
+		pthread_mutex_unlock(&lock);
+		#ifdef DRAW_TIMING_DIAGRAM
+			sprintf(text, "\t|main[%d]\t|\t\t|\n",r1);
+			time_line(text);
+		#else
+			printf("Main function of the process works: %d\n", j);
+		#endif
+		sleep(3);
+	}
+
+	while ((c_pid = wait(0)) > 0);
+
+	pthread_mutex_lock(&lock);
+	gettimeofday(&time2, 0);
+	delta = (time2.tv_sec - time1.tv_sec);
+	pthread_mutex_unlock(&lock);
+	printf("Main: Total elapsed time = %f seconds\n", delta);
+	printf("Main thread terminated...\n");
+
+	return 0;
+}
+\end{lstlisting}
+\end{minipage}
+
+\thispagestyle{empty}
+\begin{minipage}{1\textwidth}
+\begin{lstlisting}[title=func1.c, frame=tlrb, basicstyle=\tiny]
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <sys/time.h>
+#include "timing.h"
+
+void func1(void){
+	int i;
+	char* text = (char *)malloc(20);
+	for (int i = 1; i < 10; ++i){
+		#ifdef DRAW_TIMING_DIAGRAM
+			pthread_mutex_lock(&lock);
+			sprintf(text, "\t|\t\t|func1[%d]\t|\n",r1);
+			pthread_mutex_unlock(&lock);
+			
+			time_line(text);
+		#else // Original
+			printf("Function func1 prints and then sleeps 4 s: %d\n", i);
+		#endif
+		sleep(4);
+	}
+	free(text);
+	return;
+}
+\end{lstlisting}
+\end{minipage}
+
+\thispagestyle{empty}
+\begin{minipage}{1\textwidth}
+\begin{lstlisting}[title=func2.c, frame=tlrb, basicstyle=\tiny]
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <sys/time.h>
+#include "timing.h"
+
+void func2(void){
+	int i;
+	char* text = (char *)malloc(20);;
+	for (int i = 1; i < 8; ++i){
+		#ifdef DRAW_TIMING_DIAGRAM
+			pthread_mutex_lock(&lock);
+			sprintf(text, "\t|\t\t|\t\t|func2[%d]\n",r1);
+			pthread_mutex_unlock(&lock);
+			time_line(text);
+		#else // Original
+			printf("Function func2 prints and then sleeps 3 s: %d\n", i);
+		#endif
+		sleep(3);
+	}
+	free(text);
+	return;
+}
+\end{lstlisting}
+\end{minipage}
+
+\begin{minipage}{1\textwidth}
+\begin{lstlisting}[title=timing.h, frame=tlrb, basicstyle=\tiny]
+
+#define DRAW_TIMING_DIAGRAM
+extern struct timeval time1, time2;
+extern int r1;
+extern pthread_mutex_t lock;
+
+static void time_line(const char *text){
+
+	pthread_mutex_lock(&lock);
+	gettimeofday(&time2, 0);
+	printf("|%ldsec", (time2.tv_sec - time1.tv_sec));
+	printf("%s",text);
+	pthread_mutex_unlock(&lock);
+}
+
+
+\end{lstlisting}
+\end{minipage}
+
+
+
+\end{document}  
