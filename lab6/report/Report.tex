@@ -1,0 +1,145 @@
+\documentclass[11pt]{article}
+\usepackage{geometry}                
+\geometry{a4paper}                  
+
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{epstopdf}
+\usepackage{authblk}
+\usepackage{amsmath}
+\usepackage{sectsty}
+\graphicspath{ {figures/} }
+\usepackage{caption}
+\usepackage{listings}
+\usepackage{parcolumns}
+\usepackage{hyperref}
+\usepackage{blindtext,pdflscape}
+\usepackage{rotating}
+\usepackage{fancyhdr}
+\usepackage{csquotes}
+
+
+\renewcommand{\thefootnote}{\roman{footnote}}
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+
+\title{Using shared memory with semaphores for IPC \\Lab. \#6}
+
+\author{Arif A. Balik}
+\affil{Undergraduate Student\\
+	Sytstems Programming\\
+	Department of Computer Science\\
+	Arel University\\
+	Büyükçekmece, İstanbul 34537\\
+    Email: arifbalik@outlook.com
+}
+
+%\date{March 5, 2019}                                           % Activate to display a given date or no date
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+
+This report is powered by \LaTeX{}
+\end{abstract}
+
+\section*{Theory of Operation}
+
+\newpage
+\section*{Q\&A}
+
+\vspace{3mm}
+\textit{\textbf{Q1.} What is the purpose of this lab work?}
+\vspace{3mm}
+
+
+\vspace{3mm}
+\textit{\textbf{Q2.} Describe the operation of a producer-consumer system in general }
+\vspace{3mm}
+
+
+\vspace{5mm}
+\textit{\textbf{Q3.} How many processes do implement a producer-consumer System in this lab work?}
+\vspace{5mm}
+
+
+\vspace{5mm}
+\textit{\textbf{Q4.} What are the roles (duties) of each of the processes in this lab work?}
+\vspace{5mm}
+
+
+\vspace{5mm}
+\textit{\textbf{Q5.} Will the producer-consumer system. in this lab work, operate normally if the parent process initially creates the producer and the consumer processes, and only after that it will create shared memory and semaphores? Explain your answer.}
+\vspace{5mm}
+
+
+\vspace{5mm}
+\textit{\textbf{Q6.} Initially the parent process and its two child (the producer and the consumer) use the same executable program \textbf{prod\_cons\_parent}. How is it done that later the producer and the consumer execute different executable programs?}
+\vspace{5mm}
+
+
+\vspace{5mm}
+\textit{\textbf{Q7.} Suppose that the producer wants to put a message into the shared message queue when this queue is full (that is. there are no empty slots). What will the producer do in this case? Explain in detail, using the source text of the producer.}
+\vspace{5mm}
+
+
+\vspace{5mm}
+\textit{\textbf{Q8.} Suppose that the consumer wants to extract a message from the shared message queue when this queue is empty (that is. there are no messages in the queue). What will the consumer do? Explain in detail. using the source text of the consumer.}
+\vspace{5mm}
+
+
+\vspace{5mm}
+\textit{\textbf{Q9.}  Why do we need semaphores for the producer-consumer system? What can happen if no semaphores are used in this system? }
+\vspace{5mm}
+
+
+\vspace{5mm}
+\textit{\textbf{Q10.}What can you tell about the values of variables \textbf{ head} and \textbf{ tail} when the message queue is empty?}
+\vspace{5mm}
+
+
+\vspace{5mm}
+\textit{\textbf{Q11.}What can you tell about the values of variables \textbf{ head} and \textbf{ tail} when the message queue is full?}
+\vspace{5mm}
+
+
+\vspace{5mm}
+\textit{\textbf{Q12.} Suppose that the sleep time in the producer process is always zero, but the sleep time in the consumer is not zero. That is. the producer is capable to produce messages very fast. Can it really do this in the lab work, if semaphores are used? What will the producer do producing of messages in this case? Will it be blocked or not? If yes. then in what statement? Explain your answer with the of the source text.}
+\vspace{5mm}
+
+
+\vspace{5mm}
+\textit{\textbf{Q13.} Suppose that the parent process does not remove the shared memory and the semaphore set at the end. What will happen in this case? How can you see that the shared memory and the semaphores are not removed? Can you remove them manually? How?}
+\vspace{5mm}
+
+
+\vspace{5mm}
+\textit{\textbf{Q14.}The shared memory is the fastest mechanism of IPC. Explain Why}
+\vspace{5mm}
+
+
+\vspace{5mm}
+\textit{\textbf{Q15.} Explain the main disadvantage of shared mechanism of IPC.}
+\vspace{5mm}
+
+
+\vspace{5mm}
+\textit{\textbf{Q16.} Is it always necessary to use semaphores with shared memory? Explain (see Introduction to OS textbooks).}
+\vspace{5mm}
+
+\vspace{5mm}
+\textit{\textbf{Q16.}. Is it possible to the shared memory mechanism of IPC in UNIX for communication between processes run on different computers in a network? Explain.}
+\vspace{5mm}
+
+
+\section*{Optimization}
+
+
+\newpage
+\section*{Appendix}
+
+\thispagestyle{empty}
+
+
+
+\end{document}  
