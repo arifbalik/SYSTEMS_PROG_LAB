@@ -1,6 +1,5 @@
 #include "common.h"
-#include "internal.h"
-#include <pthread.h>
+
 
 int main(int argc, char *argv[])
 {
@@ -10,13 +9,13 @@ int main(int argc, char *argv[])
     int child;
     char *shmptr;
     int prod_id, cons_id, parent_id;
-    union semun arguments;
+    //union semun arguments;
     
-    /*union semun {
+    union semun {
             int val;
             struct semid_ds *buf;
             unsigned short  *array;
-} arguments;*/
+} arguments;
 
     printf("Parent process starting...\n");
     if(argc != 2) {printf("Usage: %s num_of_messages\n", argv[0]); exit(1);}
@@ -42,11 +41,11 @@ int main(int argc, char *argv[])
 
     prod_id = fork();
     if(cons_id == -1){perror("fork problem 1 in parent"); exit(-1);}
-    if(prod_id == 0)execl("producer", "producer", argv[1], 0);
+    if(prod_id == 0)execl("producer", "producer", argv[1], NULL);
 
     cons_id = fork();
     if(cons_id == -1){perror("fork problem 2 in parent"); exit(1);}
-    if(cons_id == 0)execl("consumer", "consumer", argv[1], 0);
+    if(cons_id == 0)execl("consumer", "consumer", argv[1], NULL);
 
     printf("Parent process is waiting...\n");
     wait(0);
