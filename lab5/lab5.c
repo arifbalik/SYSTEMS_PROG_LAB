@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <sys/dir.h>
 #include <string.h>
+#include <pwd.h>
 
 
 void  list_dir(char *base_path, const int root);
@@ -17,6 +18,7 @@ int main(int argc, char **argv)
     struct dirent *dir;
     struct stat info;
     char pathname[BUFSIZ+1];
+    struct passwd *ps;
 
     if(argc != 2){
         printf("Please give a path. \n Example: ./[name] [path]\n");
@@ -24,15 +26,16 @@ int main(int argc, char **argv)
     }
 
     if(stat(argv[1], &info) < 0) exit(1);
-
+    
     if((info.st_mode & __S_IFMT) != __S_IFREG && (info.st_mode & __S_IFMT) != __S_IFDIR ){
-        perror("%s is not a directory or file\n", argv[1]);
+        printf("%s is not a directory or file\n", argv[1]);
         exit(1);
     }
 
     switch((info.st_mode & __S_IFMT)){
         case __S_IFREG:
-            printf("File name : %s, Size : %ld\n", argv[1], info.st_size);
+            ps = getpwuid(info.st_uid);
+            printf("File name : %s, Size : %ld, Owner: %s\n", argv[1], info.st_size, ps->pw_name);
             exit(1);
         break;
         case __S_IFDIR:
@@ -54,6 +57,7 @@ void list_dir(char *base_path, const int root)
     struct stat info;
     DIR *dir = opendir(base_path);
     char cur_path[BUFSIZ + 1];
+    struct passwd *ps;
 
     if (!dir){
         return;
@@ -72,7 +76,8 @@ void list_dir(char *base_path, const int root)
             }   
         sprintf(cur_path, "%s/%s",base_path, dp->d_name);
             if(stat(cur_path, &info) < 0) return;
-            printf("|--%s size: %ld\n", dp->d_name, info.st_size);
+        ps = getpwuid(info.st_uid);
+            printf("|--%s, Size: %ld, Owner: %s\n", dp->d_name, info.st_size, ps->pw_name) ;
 
             strcpy(path, base_path);
             strcat(path, "/");
